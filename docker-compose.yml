@@ -1,0 +1,183 @@
+version: '3.7'
+
+services:
+
+  hydra-migrate:
+    image: tribehealth/hydra:vNext
+    ports:
+      - "4444:4444" # Public port
+      - "4445:4445" # Admin port
+      - "5555:5555" # Port for hydra token user
+    depends_on:
+      - postgres-hydra
+      - jaeger
+    command:
+      migrate -c /etc/config/hydra/hydra.yml sql -e --yes
+    volumes:
+      -
+        type: bind
+        source: ./cordico
+        target: /etc/config/hydra
+    networks:
+      - cordico-hydra
+    environment:
+      - SECRETS_SYSTEM=iTOotd9jCA7KiwFApRp4y5fdOHLSGN4j
+      - DSN=postgres://hydra:hydra@postgres-hydra:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
+
+  hydra:
+    image: tribehealth/hydra:vNext
+    depends_on:
+      - hydra-migrate
+      - jaeger
+    volumes:
+      -
+        type: bind
+        source: ./cordico
+        target: /etc/config/hydra
+    command: serve all --config /etc/config/hydra/hydra.yml
+    networks:
+      - cordico-hydra
+    environment:
+      - SECRETS_SYSTEM=iTOotd9jCA7KiwFApRp4y5fdOHLSGN4j
+      - TRACING_PROVIDER=jaeger
+      - TRACING_PROVIDERS_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
+      - TRACING_PROVIDERS_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
+      - TRACING_PROVIDERS_JAEGER_SAMPLING_TYPE=const
+      - TRACING_PROVIDERS_JAEGER_SAMPLING_VALUE=1
+      - STRATEGIES_ACCESS_TOKEN=jwt
+      - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=public
+      - DSN=postgres://hydra:hydra@postgres-hydra:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
+
+  kratos-migrate:
+    image: tribehealth/kratos:vNext
+    environment:
+      - DSN=postgres://hydra:hydra@postgres-hydra:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+    command: migrate sql postgres://hydra:hydra@postgres-hydra:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4 --config /etc/config/kratos.yml --yes
+    depends_on:
+      - postgres-hydra
+    volumes:
+      -
+        type: bind
+        source: ./kratos
+        target: /etc/config
+    networks:
+      - cordico-hydra
+
+  kratos:
+    image: tribehealth/kratos:vNext
+    ports:
+      - "4433:4433"
+      - "4434:4434"
+    depends_on:
+      - kratos-migrate
+      - jaeger
+    volumes:
+      -
+        type: bind
+        source: ./kratos
+        target: /etc/config
+    command: serve -c /etc/config/kratos.yml
+    networks:
+      - cordico-hydra
+    environment:
+      - SERVE_PUBLIC_BASE_URL=https://kratos-ss.tribecore.io/.ory/kratos/public/
+      - TRACING_PROVIDER=jaeger
+      - TRACING_PROVIDER_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
+      - TRACING_PROVIDER_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
+      - TRACING_PROVIDER_JAEGER_SAMPLING_TYPE=const
+      - TRACING_PROVIDER_JAEGER_SAMPLING_VALUE=1
+      - DSN=postgres://hydra:hydra@postgres-hydra:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+
+  oathkeeper:
+    image: oryd/oathkeeper:v0.38.12-beta.1
+    depends_on:
+      - jaeger
+    networks:
+      - cordico-hydra
+    ports:
+      - "4455:4455"
+      - "4456:4456"
+    command:
+      serve proxy --config=/etc/config/oathkeeper/config.yaml
+    environment:
+      - TRACING_PROVIDER=jaeger
+      - TRACING_PROVIDER_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
+      - TRACING_PROVIDER_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
+      - TRACING_PROVIDER_JAEGER_SAMPLING_TYPE=const
+      - TRACING_PROVIDER_JAEGER_SAMPLING_VALUE=1
+    volumes:
+      - type: bind
+        source: ./oathkeeper_config
+        target: /etc/config/oathkeeper
+    restart: on-failure
+
+  kratos-selfservice-ui-node:
+    image: oryd/kratos-selfservice-ui-node:v0.7.3-alpha.1
+    depends_on:
+      - kratos
+      - oathkeeper
+    environment:
+      - PORT=6666
+      - KRATOS_PUBLIC_URL=https://kratos-ss.tribecore.io/.ory/kratos/public
+      - KRATOS_ADMIN_URL=http://kratos:4434/
+      - KRATOS_BROWSER_URL=https://kratos-ss.tribecore.io/.ory/kratos/public
+      - JWKS_URL=http://oathkeeper:4456/.well-known/jwks.json
+      - SECURITY_MODE=jwt
+    ports:
+      - "6666:6666"
+    networks:
+      - cordico-hydra
+    restart: on-failure
+
+  consent:
+    environment:
+      - HYDRA_ADMIN_URL=http://hydra:4445
+    image: tribehealth/hydra-login-consent-node:v1.10.6
+    depends_on:
+      - hydra
+    ports:
+      - "3300:3300"
+    restart: unless-stopped
+    networks:
+      - cordico-hydra
+
+  mailslurper:
+    image: tribehealth/mailslurper:latest
+    networks:
+      - cordico-hydra
+    ports:
+      - "8777:8080"
+      - "8085:8085"
+      - "2500:2500"
+
+  postgres-hydra:
+    image: postgres:13
+    restart: always
+    command: postgres -c 'max_connections=1000'
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: "hydra"
+      POSTGRES_USER: "hydra"
+    ports:
+      - "5478:5432"
+    networks:
+      - cordico-hydra
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.25
+    environment:
+      SPAN_STORAGE_TYPE: "badger"
+      BADGER_EPHEMERAL: "false"
+      BADGER_DIRECTORY_VALUE: "/badger/data"
+      BADGER_DIRECTORY_KEY: "/badger/key"
+    volumes:
+      - ./badger:/badger
+    networks:
+      - cordico-hydra
+    ports:
+      - "9091:16686"
+
+networks:
+  cordico-hydra:
+    external: true 

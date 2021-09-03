@@ -1,0 +1,81 @@
+version: v0.7.1-alpha.1
+
+dsn: postgres://kratos:kratos@postgres:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+
+serve:
+  public:
+    base_url: https://kratos.tribecore.io/
+    cors:
+      enabled: true
+  admin:
+    base_url: http://kratos:4434/
+
+selfservice:
+  default_browser_return_url: https://kratos-ss.tribecore.io/
+  whitelisted_return_urls:
+    - https://kratos-ss.tribecore.io
+
+  methods:
+    password:
+      enabled: true
+
+
+  flows:
+    error:
+      ui_url: https://kratos-ss.tribecore.io/error
+
+    settings:
+      ui_url: https://kratos-ss.tribecore.io/settings
+      privileged_session_max_age: 15m
+
+    recovery:
+      enabled: true
+      ui_url: https://kratos-ss.tribecore.io/recovery
+
+    verification:
+      enabled: true
+      ui_url: https://kratos-ss.tribecore.io/verify
+      after:
+        default_browser_return_url: https://kratos-ss.tribecore.io/
+
+    logout:
+      after:
+        default_browser_return_url: https://kratos-ss.tribecore.io/auth/login
+
+    login:
+      ui_url: https://kratos-ss.tribecore.io/auth/login
+      lifespan: 10m
+
+    registration:
+      lifespan: 10m
+      ui_url: https://kratos-ss.tribecore.io/auth/registration
+      after:
+        password:
+          hooks:
+            -
+              hook: session
+
+log:
+  level: debug
+  format: text
+  leak_sensitive_values: true
+
+secrets:
+  cookie:
+    - Bjcm87kiruJlmrMdLmWyHRh56PbNzeRg
+
+hashers:
+  argon2:
+    parallelism: 1
+    memory: 128MB
+    iterations: 2
+    salt_length: 16
+    key_length: 16
+
+identity:
+  default_schema_url: file:///etc/config/identity.schema.json
+
+courier:
+  smtp:
+    connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true
+

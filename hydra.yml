@@ -1,0 +1,36 @@
+serve:
+  cookies:
+    same_site_mode: Lax
+
+urls:
+  self:
+          issuer: https://hydra.tribecore.io
+  consent: https://hydra-ss.tribecore.io/consent
+  login: https://hydra-ss.tribecore.io/login
+  logout: http://hydra-ss.tribecore.io/logout
+
+secrets:
+  system:
+    - iTOotd9jCA7KiwFApRp4y5fdOHLSGN4j
+
+strategies:
+    access_token: jwt
+
+oidc:
+  subject_identifiers:
+    supported_types:
+      - pairwise
+      - public
+    pairwise:
+      salt: xNPu5MmUAmdqQJvaI3vFtoSezbLF1Udk
+
+tracing:
+    provider: jaeger
+    service_name: Hydra
+    providers:
+        jaeger:
+            local_agent_address: jaeger:6831
+            sampling:
+                type: const
+                value: 1
+                server_url: http://jaeger:5778/sampling
