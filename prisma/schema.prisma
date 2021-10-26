@@ -1,0 +1,320 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["filterJson"]
+}
+
+datasource cordico {
+  provider = "postgresql"
+  url      = "postgresql://postgres:postgrespassword@postgres:5433/postgres?schema=public"
+}
+
+model Asset {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  assetTypeId String    @map("asset_type_id") @cordico.Uuid
+  fileName    String    @map("file_name")
+  mimeType    String    @map("mime_type")
+  hash        String?
+  url         String?
+  createdAt   DateTime  @default(now()) @map("created_at") @cordico.Timestamptz(6)
+  creatorId   String   @map("creator_id") @cordico.Uuid
+  updatedAt   DateTime? @map("updated_at") @cordico.Timestamptz(6)
+  updaterId   String?    @map("updater_id") @cordico.Uuid
+  data        Json
+  assetType   AssetType @relation(fields: [assetTypeId], references: [id], onUpdate: Restrict)
+  creator     User     @relation("AssetsCreated", fields: [creatorId], references: [id], onUpdate: Restrict)
+  updater     User?      @relation("AssetsUpdated", fields: [updaterId], references: [id], onUpdate: Restrict, onDelete: Restrict)
+
+  @@map("asset")
+}
+
+model AssetType {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name        String    @unique
+  key         String    @unique
+  schema      Json
+  mimeTypes   String[]  @map("mime_types")
+  createdAt   DateTime  @default(now()) @map("created_at") @cordico.Timestamptz(6)
+  creatorId   String    @map("creator_id") @cordico.Uuid
+  updatedAt   DateTime? @map("updated_at") @cordico.Timestamptz(6)
+  updaterId   String?   @map("updater_id") @cordico.Uuid
+  description String?
+  creator     User      @relation("AssetTypesCreated", fields: [creatorId], references: [id], onUpdate: Restrict)
+  updater     User?     @relation("AssetTypesUpdated", fields: [updaterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assets      Asset[]
+
+  @@map("asset_type")
+}
+
+model Category {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name             String             @unique
+  description      String             @default("")
+  key              String             @unique
+  contentCategory ContentCategory[] @relation("categoryTocontent_category")
+
+  @@map("category")
+}
+
+model Collection {
+  id                               String                   @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name                             String                   @unique
+  title                            String
+  isShared                         Boolean                  @default(false) @map("is_shared")
+  key                              String?                  @unique
+  collectionTypeId                 String?                  @map("collection_type_id") @cordico.Uuid
+  createdAt                       DateTime                 @default(now()) @cordico.Timestamptz(6) @map("created_at")
+  creatorId                       String?                  @cordico.Uuid @map("creator_id")
+  updatedAt                       DateTime?                @default(now()) @cordico.Timestamptz(6)
+  updaterId                       String?                  @cordico.Uuid @map("updater_id")
+  data                             Json?
+  collectionType                   CollectionType?          @relation(fields: [collectionTypeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  creator User?                    @relation("collection_creator_idTouser", fields: [creatorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  updater User?                    @relation("collection_updater_idTouser", fields: [updaterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  collectionContent                CollectionContent[]
+  organizationCollections         OrganizationCollection[] @relation("collectionToorganization_collections")
+
+  @@map("collection")
+}
+
+model CollectionContent {
+  collectionId String     @map("collection_id") @cordico.Uuid
+  contentId    String     @map("content_id") @cordico.Uuid
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  content      Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, contentId])
+  @@map("collection_content")
+}
+
+model CollectionType {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name        String       @unique
+  key         String       @unique
+  description String?
+  createdAt   DateTime     @default(now()) @map("created_at") @cordico.Timestamptz(6)
+  creatorId   String?      @map("creator_id") @cordico.Uuid
+  updatedAt   DateTime?    @map("updated_at") @cordico.Timestamptz(6)
+  updaterId   String?      @map("updater_id") @cordico.Uuid
+  schema      Json?
+  creator     User?        @relation("CollectionTypesCreated", fields: [creatorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  updater     User?        @relation("CollectionTypesUpdated", fields: [updaterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  collections Collection[]
+
+  @@map("collection_type")
+}
+
+model Configuration {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name                String            @unique
+  key                 String            @unique
+  configurationTypeId String            @map("configuration_type_id") @cordico.Uuid
+  data                Json
+  createDate          DateTime          @default(now()) @map("create_date") @cordico.Timestamptz(6)
+  lastUpdateDate      DateTime?         @map("last_update_date") @cordico.Timestamptz(6)
+  configurationType   ConfigurationType @relation(fields: [configurationTypeId], references: [id], onUpdate: Restrict)
+
+  @@map("configuration")
+}
+
+model ConfigurationType {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name           String          @unique
+  key            String          @unique
+  schema         Json
+  configurations Configuration[]
+
+  @@map("configuration_type")
+}
+
+model ContactType {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name                 String                @unique
+  displayName          String                @map("display_name")
+  schema               Json?
+  organizationContacts OrganizationContact[]
+
+  @@map("contact_type")
+}
+
+model Content {
+  id                            String              @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name                          String
+  contentTypeId                 String              @map("content_type_id") @cordico.Uuid
+  data                          Json
+  contentStateId                String              @default(dbgenerated("'ee3e05f4-6db5-4ef5-9c28-9664020c920f'::uuid")) @map("content_state_id") @cordico.Uuid
+  createdAt                    DateTime            @default(now()) @cordico.Timestamptz(6) @map("created_at")
+  creatorId                    String              @default(dbgenerated("'0ea3a790-ba7e-4429-a7e4-6e7f5f9000a0'::uuid")) @cordico.Uuid @map("creator_id")
+  updatedAt                    DateTime?           @default(now()) @cordico.Timestamptz(6) @map("updated_at")
+  updaterId                    String?             @cordico.Uuid @map("updater_id")
+  isShared                      Boolean             @default(false) @map("is_shared")
+  contentState                  ContentState        @relation(fields: [contentStateId], references: [id], onUpdate: Restrict)
+  contentType                   ContentType         @relation(fields: [contentTypeId], references: [id], onUpdate: Restrict)
+  creator User                @relation("content_creator_idTouser", fields: [creatorId], references: [id], onUpdate: Restrict)
+  updater User?               @relation("content_updater_idTouser", fields: [updaterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  collectionContent             CollectionContent[]
+  contentCategory              ContentCategory[]  @relation("contentTocontent_category")
+  contentPartContent            ContentPart[]       @relation("contentTocontent_part_content_id")
+  parts                         ContentPart[]       @relation("contentTocontent_part_part_id")
+
+  @@map("content")
+}
+
+model ContentPart {
+  contentId String  @map("content_id") @cordico.Uuid
+  partId    String  @map("part_id") @cordico.Uuid
+  index     Int     @default(0)
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  content   Content @relation("contentTocontent_part_content_id", fields: [contentId], references: [id], onUpdate: Restrict)
+  part      Content @relation("contentTocontent_part_part_id", fields: [partId], references: [id], onUpdate: Restrict)
+
+  @@map("content_part")
+}
+
+model ContentState {
+  id      String    @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name    String    @unique
+  key     String    @unique
+  content Content[]
+
+  @@map("content_state")
+}
+
+model ContentType {
+  id                                 String        @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name                               String        @unique
+  description                        String?
+  createdAt                          DateTime      @default(now()) @map("created_at") @cordico.Timestamptz(6)
+  updatedAt                          DateTime?     @default(now()) @map("updated_at") @cordico.Timestamptz(6)
+  schema                             Json
+  creatorId                         String        @default(dbgenerated("'0ea3a790-ba7e-4429-a7e4-6e7f5f9000a0'::uuid")) @cordico.Uuid @map("creator_id")
+  updaterId                         String?       @cordico.Uuid @map("updater_id")
+  parentTypeId                       String?       @map("parent_type_id") @cordico.Uuid
+  isShared                           Boolean       @default(false) @map("is_shared")
+  supportsCategory                   Boolean       @default(true) @map("supports_category")
+  key                                String        @unique
+  creator User          @relation("content_type_creator_idTouser", fields: [creatorId], references: [id], onUpdate: Restrict)
+  contentType                        ContentType?  @relation("content_typeTocontent_type_parent_type_id", fields: [parentTypeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  updater User?         @relation("content_type_updater_idTouser", fields: [updaterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  content                            Content[]
+  parentContentTypes                 ContentType[] @relation("content_typeTocontent_type_parent_type_id")
+
+  @@map("content_type")
+}
+
+model Organization {
+  id                                 String                   @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  organizationTypeId                 String                   @map("organization_type_id") @cordico.Uuid
+  name                               String
+  data                               Json                     @default("{}")
+  description                        String?
+  createdAt                         DateTime                 @default(now()) @cordico.Timestamptz(6) @map("createdAt")
+  creatorId                         String                   @default(dbgenerated("'0ea3a790-ba7e-4429-a7e4-6e7f5f9000a0'::uuid")) @cordico.Uuid @map("creator_id")
+  updatedAt                         DateTime?                @default(now()) @cordico.Timestamptz(6) @map("updated_at")
+  updaterId                         String?                  @cordico.Uuid @map("updater_id")
+  portalFqdn                         String?                  @unique @map("portal_fqdn")
+  creator                       User                     @relation("organization_creator_idTouser", fields: [creatorId], references: [id], onUpdate: Restrict)
+  organizationType                  OrganizationType        @relation("organizationToorganization_type", fields: [organizationTypeId], references: [id], onUpdate: Restrict)
+  updater                       User?                    @relation("organization_updater_idTouser", fields: [updaterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  organizationCollections           OrganizationCollection[] @relation("organizationToorganization_collections")
+  organizationContacts               OrganizationContact[]
+
+  @@map("organization")
+}
+
+model OrganizationCollection {
+  organizationId String       @cordico.Uuid @map("organization_id")
+  collectionId   String       @cordico.Uuid @map("collection_id")
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  collection      Collection   @relation("collectionToorganization_collections", fields: [collectionId], references: [id], onDelete: Cascade)
+  organization    Organization @relation("organizationToorganization_collections", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_collections")
+}
+
+model OrganizationContact {
+  id                                          String       @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name                                        String       @unique(map: "organization_contacts_first_name_key")
+  title                                       String
+  isActive                                    Boolean      @default(true) @map("is_active")
+  organizationId                              String       @map("organization_id") @cordico.Uuid
+  data                                        Json?
+  contactTypeId                               String       @map("contact_type_id") @cordico.Uuid
+  created                                     DateTime     @default(now()) @cordico.Timestamptz(6)
+  creatorId                                  String       @default(dbgenerated("'d87f7c09-60ba-4124-a4e8-a6a6cb015b5e'::uuid")) @cordico.Uuid @map("creator_id")
+  updated                                     DateTime?    @cordico.Timestamptz(6)
+  updaterId                                  String?      @cordico.Uuid  @map("updater_id")
+  contactType                                 ContactType  @relation(fields: [contactTypeId], references: [id], onUpdate: Restrict)
+  creator User         @relation("organization_contacts_creator_idTouser", fields: [creatorId], references: [id], onUpdate: Restrict)
+  organization                                Organization @relation(fields: [organizationId], references: [id], onUpdate: Restrict)
+  updater User?        @relation("organization_contacts_updater_idTouser", fields: [updaterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@map("organization_contacts")
+}
+
+model User {
+  id                                                           String                @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  identifier                                                   String                @unique
+  data                                                         Json?
+  createdAt                                                   DateTime              @default(now()) @cordico.Timestamptz(6) @map("created_at")
+  updatedAt                                                   DateTime?             @default(now()) @cordico.Timestamptz(6) @map("updated_at")
+  userServiceId                                                String?               @unique @map("user_service_id")
+  userTypeId                                                   String                @default(dbgenerated("'5f8667e0-51d1-4523-9653-2b96847d6311'::uuid")) @map("user_type_id") @cordico.Uuid
+  userType                                                    UserType             @relation("userTouser_type", fields: [userTypeId], references: [id], onUpdate: Restrict)
+  assetsCreated                                                Asset[]               @relation("AssetsCreated")
+  assetsUpdated                                                Asset[]               @relation("AssetsUpdated")
+  assetTypesCreated                                            AssetType[]           @relation("AssetTypesCreated")
+  assetTypesUpdated                                            AssetType[]           @relation("AssetTypesUpdated")
+  collectionsCreated                       Collection[]          @relation("collection_creator_idTouser")
+  collectionsUpdated                       Collection[]          @relation("collection_updater_idTouser")
+  collectionTypesCreated                                       CollectionType[]      @relation("CollectionTypesCreated")
+  collectionTypesUpdated                                       CollectionType[]      @relation("CollectionTypesUpdated")
+  contentCreated                             Content[]             @relation("content_creator_idTouser")
+  contentUpdated                             Content[]             @relation("content_updater_idTouser")
+  contentTypesCreated                   ContentType[]         @relation("content_type_creator_idTouser")
+  contentTypesUpdated                   ContentType[]         @relation("content_type_updater_idTouser")
+  organizationsCreated                   Organization[]        @relation("organization_creator_idTouser")
+  organizationsUpdated                   Organization[]        @relation("organization_updater_idTouser")
+  organizationContactsCreated OrganizationContact[] @relation("organization_contacts_creator_idTouser")
+  organizationContactsUpdated OrganizationContact[] @relation("organization_contacts_updater_idTouser")
+  organizationTypesCreated         OrganizationType[]   @relation("organization_type_creator_idTouser")
+  organizationTypesUpdated         OrganizationType[]   @relation("organization_type_updater_idTouser")
+
+  @@map("user")
+}
+
+model ContentCategory {
+  contentId  String   @cordico.Uuid @map("content_id")
+  categoryId String   @cordico.Uuid @map("category_id")
+  id          String   @id @unique @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  category    Category @relation("categoryTocontent_category", fields: [categoryId], references: [id], onDelete: Cascade)
+  content     Content  @relation("contentTocontent_category", fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model OrganizationType {
+  id                                      String         @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name                                    String
+  schema                                  Json
+  description                             String?
+  createdAt                              DateTime       @default(now()) @cordico.Timestamptz(6) @map("created_at")
+  creatorId                              String         @default(dbgenerated("'0ea3a790-ba7e-4429-a7e4-6e7f5f9000a0'::uuid")) @cordico.Uuid @map("creator_id")
+  updatedAt                              DateTime?      @default(now()) @cordico.Timestamptz(6) @map("updated_at")
+  updaterId                              String?        @cordico.Uuid @map("updater_id")
+  key                                     String         @unique
+  creator User           @relation("organization_type_creator_idTouser", fields: [creatorId], references: [id], onUpdate: Restrict)
+  updater User?          @relation("organization_type_updater_idTouser", fields: [updaterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  organization                            Organization[] @relation("organizationToorganization_type")
+
+  @@map("organization_type")
+}
+
+model UserType {
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @cordico.Uuid
+  name            String @unique
+  key             String @unique
+  identitySchema String @default("default") @map("identity_schema")
+  schema          Json
+  user            User[] @relation("userTouser_type")
+
+  @@map("user_type")
+}
