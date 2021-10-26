@@ -8,7 +8,7 @@ serve:
     cors:
       enabled: true
   admin:
-    base_url: http://kratos:4434/
+    base_url: https://kratos-admin.tribecore.io/
 
 selfservice:
   default_browser_return_url: https://kratos-ss.tribecore.io/
@@ -75,7 +75,14 @@ hashers:
 identity:
   default_schema_url: file:///etc/config/identity.schema.json
 
+  schemas:
+    - id: organization
+      url: file:///etc/config/organization.schema.json
+
 courier:
   smtp:
-    connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true&legacy_ssl=true
+    connection_uri: smtps://postmaster:3d8c25d151343f553b2c9d19d52ea665-dbdfb8ff-c020ce20@smtp.mailgun.org:587/
+    from_address: admin@tribecore.io
 
+session:
+  lifespan: 4320h       

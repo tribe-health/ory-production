@@ -141,15 +141,6 @@ services:
     networks:
       - cordico-hydra
 
-  mailslurper:
-    image: tribehealth/mailslurper:latest
-    networks:
-      - cordico-hydra
-    ports:
-      - "8777:8080"
-      - "8085:8085"
-      - "2500:2500"
-
   postgres-hydra:
     image: postgres:13
     restart: always
@@ -161,6 +152,97 @@ services:
       POSTGRES_USER: "hydra"
     ports:
       - "5478:5432"
+    networks:
+      - cordico-hydra
+
+  postgres:
+    image: postgres:12
+    restart: always
+    ports:
+    - "5445:5433"
+    volumes:
+    - ./db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgrespassword
+    networks:
+      - cordico-hydra
+    command:
+      -p 5433
+
+  prisma:
+    image: tribehealth/prisma-query-engine:v0.0.2
+    environment:
+      PRISMA_DML_PATH: "/usr/src/app/prisma/schema.prisma"
+    volumes:
+      - ./prisma/schema.prisma:/usr/src/app/prisma/schema.prisma
+    depends_on:
+      - postgres
+    ports:
+      - "4466:4466"
+    networks:
+      - cordico-hydra
+
+  graphql-engine:
+    image: hasura/graphql-engine:v2.0.9
+    ports:
+    - "8089:8999"
+    depends_on:
+    - "postgres"
+    restart: always
+    environment:
+      ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5433/postgres
+      ## this env var can be used to add the above postgres database to Hasura as a data source. this can be removed/updated based on your needs
+      PG_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5433/postgres
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      HASURA_GRAPHQL_ENABLE_REMOTE_SCHEMA_PERMISSIONS: "true"
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_SERVER_PORT: 8999
+      HASURA_GRAPHQL_EXPERIMENTAL_FEATURES: "inherited_roles"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      ## uncomment next line to set an admin secret
+      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+    networks:
+      - cordico-hydra
+
+  user-server:
+    image: tribehealth/cordico-user-server:v0.0.35
+    ports:
+     - "8460:8457"
+    depends_on:
+    - prisma
+    - jaeger
+    - ipfs
+    - redis
+    restart: always
+    environment:
+      PRISMA_URL: http://prisma:4466
+      SPRING_PROFILES_ACTIVE: "prod"
+      SPRING_APPLICATION_NAME: "cordico-user-service"
+      IPFS_HOST: /dns4/ipfs/tcp/5001
+      IPFS_URL: https://ipfs.tribecore.io
+      KRATOS_URL: http://kratos:4433
+      HASURA_URL: http://graphql-engine/v1/graphql
+    networks:
+      - cordico-hydra
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6377:6379
+    networks:
+      - cordico-hydra
+
+  ipfs:
+    image: ipfs/go-ipfs
+    ports:
+      - "4101:4001"
+      - "5111:5001"
+      - "8181:8080"
+    volumes:
+      - ./ipfs:/data/ipfs
     networks:
       - cordico-hydra
 

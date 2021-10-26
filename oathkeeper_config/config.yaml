@@ -59,12 +59,17 @@ authenticators:
   cookie_session:
     enabled: true
     config:
-      check_session_url: http://kratos:4433/sessions/whoami
+      check_session_url: https://kratos.tribecore.io/sessions/whoami
       preserve_path: true
       extra_from: "@this"
       subject_from: "identity.id"
       only:
         - ory_kratos_session
+
+  bearer_token:
+    enabled: true
+    config:
+      check_session_url: https://kratos.tribecore.io/sessions/whoami
 
   noop:
     enabled: true

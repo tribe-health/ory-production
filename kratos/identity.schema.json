@@ -23,7 +23,12 @@
           "type": "string",
           "format": "email",
           "title": "E-Mail",
-          "minLength": 3
+          "minLength": 3,
+	  "ory.sh/kratos": {
+            "recovery": {
+	      "via":"email"
+	    }
+	  }  
         },
         "name": {
           "type": "object",
