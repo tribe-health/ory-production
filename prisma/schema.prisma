@@ -17,7 +17,7 @@ model Asset {
   url         String?
   createdAt   DateTime  @default(now()) @map("created_at") @cordico.Timestamptz(6)
   creatorId   String   @map("creator_id") @cordico.Uuid
-  updatedAt   DateTime? @map("updated_at") @cordico.Timestamptz(6)
+  updatedAt   DateTime? @map("updated_at") @cordico.Timestamptz(6) 
   updaterId   String?    @map("updater_id") @cordico.Uuid
   data        Json
   assetType   AssetType @relation(fields: [assetTypeId], references: [id], onUpdate: Restrict)
@@ -35,7 +35,7 @@ model AssetType {
   mimeTypes   String[]  @map("mime_types")
   createdAt   DateTime  @default(now()) @map("created_at") @cordico.Timestamptz(6)
   creatorId   String    @map("creator_id") @cordico.Uuid
-  updatedAt   DateTime? @map("updated_at") @cordico.Timestamptz(6)
+  updatedAt   DateTime? @map("updated_at") @cordico.Timestamptz(6) 
   updaterId   String?   @map("updater_id") @cordico.Uuid
   description String?
   creator     User      @relation("AssetTypesCreated", fields: [creatorId], references: [id], onUpdate: Restrict)
@@ -94,7 +94,7 @@ model CollectionType {
   description String?
   createdAt   DateTime     @default(now()) @map("created_at") @cordico.Timestamptz(6)
   creatorId   String?      @map("creator_id") @cordico.Uuid
-  updatedAt   DateTime?    @map("updated_at") @cordico.Timestamptz(6)
+  updatedAt   DateTime?    @map("updated_at") @cordico.Timestamptz(6) 
   updaterId   String?      @map("updater_id") @cordico.Uuid
   schema      Json?
   creator     User?        @relation("CollectionTypesCreated", fields: [creatorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
@@ -111,7 +111,7 @@ model Configuration {
   configurationTypeId String            @map("configuration_type_id") @cordico.Uuid
   data                Json
   createDate          DateTime          @default(now()) @map("create_date") @cordico.Timestamptz(6)
-  lastUpdateDate      DateTime?         @map("last_update_date") @cordico.Timestamptz(6)
+  lastUpdateDate      DateTime?         @map("last_update_date") @cordico.Timestamptz(6) 
   configurationType   ConfigurationType @relation(fields: [configurationTypeId], references: [id], onUpdate: Restrict)
 
   @@map("configuration")
@@ -208,9 +208,9 @@ model Organization {
   name                               String
   data                               Json                     @default("{}")
   description                        String?
-  createdAt                         DateTime                 @default(now()) @cordico.Timestamptz(6) @map("createdAt")
+  createdAt                         DateTime                 @default(now()) @cordico.Timestamptz(6) @map("created_at")
   creatorId                         String                   @default(dbgenerated("'0ea3a790-ba7e-4429-a7e4-6e7f5f9000a0'::uuid")) @cordico.Uuid @map("creator_id")
-  updatedAt                         DateTime?                @default(now()) @cordico.Timestamptz(6) @map("updated_at")
+  updatedAt                         DateTime?                @default(now()) @cordico.Timestamptz(6) @map("updated_at") 
   updaterId                         String?                  @cordico.Uuid @map("updater_id")
   portalFqdn                         String?                  @unique @map("portal_fqdn")
   creator                       User                     @relation("organization_creator_idTouser", fields: [creatorId], references: [id], onUpdate: Restrict)
@@ -242,8 +242,8 @@ model OrganizationContact {
   contactTypeId                               String       @map("contact_type_id") @cordico.Uuid
   created                                     DateTime     @default(now()) @cordico.Timestamptz(6)
   creatorId                                  String       @default(dbgenerated("'d87f7c09-60ba-4124-a4e8-a6a6cb015b5e'::uuid")) @cordico.Uuid @map("creator_id")
-  updated                                     DateTime?    @cordico.Timestamptz(6)
-  updaterId                                  String?      @cordico.Uuid  @map("updater_id")
+  updated                                     DateTime?    @cordico.Timestamptz(6) 
+  updaterId                                  String?      @cordico.Uuid  @map("updater_id") 
   contactType                                 ContactType  @relation(fields: [contactTypeId], references: [id], onUpdate: Restrict)
   creator User         @relation("organization_contacts_creator_idTouser", fields: [creatorId], references: [id], onUpdate: Restrict)
   organization                                Organization @relation(fields: [organizationId], references: [id], onUpdate: Restrict)
@@ -257,7 +257,7 @@ model User {
   identifier                                                   String                @unique
   data                                                         Json?
   createdAt                                                   DateTime              @default(now()) @cordico.Timestamptz(6) @map("created_at")
-  updatedAt                                                   DateTime?             @default(now()) @cordico.Timestamptz(6) @map("updated_at")
+  updatedAt                                                   DateTime?             @default(now()) @cordico.Timestamptz(6) @map("updated_at") 
   userServiceId                                                String?               @unique @map("user_service_id")
   userTypeId                                                   String                @default(dbgenerated("'5f8667e0-51d1-4523-9653-2b96847d6311'::uuid")) @map("user_type_id") @cordico.Uuid
   userType                                                    UserType             @relation("userTouser_type", fields: [userTypeId], references: [id], onUpdate: Restrict)
@@ -298,7 +298,7 @@ model OrganizationType {
   description                             String?
   createdAt                              DateTime       @default(now()) @cordico.Timestamptz(6) @map("created_at")
   creatorId                              String         @default(dbgenerated("'0ea3a790-ba7e-4429-a7e4-6e7f5f9000a0'::uuid")) @cordico.Uuid @map("creator_id")
-  updatedAt                              DateTime?      @default(now()) @cordico.Timestamptz(6) @map("updated_at")
+  updatedAt                              DateTime?      @default(now()) @cordico.Timestamptz(6) @map("updated_at") 
   updaterId                              String?        @cordico.Uuid @map("updater_id")
   key                                     String         @unique
   creator User           @relation("organization_type_creator_idTouser", fields: [creatorId], references: [id], onUpdate: Restrict)

@@ -208,7 +208,7 @@ services:
       - cordico-hydra
 
   user-server:
-    image: tribehealth/cordico-user-server:v0.0.35
+    image: tribehealth/cordico-user-server:v0.0.40
     ports:
      - "8460:8457"
     depends_on:
