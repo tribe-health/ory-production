@@ -5,7 +5,7 @@ generator client {
 
 datasource cordico {
   provider = "postgresql"
-  url      = "postgresql://postgres:postgrespassword@postgres:5433/postgres?schema=public"
+  url      = "postgresql://psqladminun@cordico-production-psql-server-lexipol:Ha$h1CoR3!@cordico-production-psql-server-lexipol.postgres.database.azure.com:5432/content?schema=public"
 }
 
 model Asset {

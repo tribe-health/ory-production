@@ -30,7 +30,7 @@ errors:
     redirect:
       enabled: true
       config:
-        to: https://kratos-ss.tribecore.io/auth/login
+        to: https://kratos-ss-dev.dev.cordico.com/auth/login
         when:
           -
             error:
@@ -59,7 +59,7 @@ authenticators:
   cookie_session:
     enabled: true
     config:
-      check_session_url: https://kratos.tribecore.io/sessions/whoami
+      check_session_url: https://kratos-dev.dev.cordico.com/sessions/whoami
       preserve_path: true
       extra_from: "@this"
       subject_from: "identity.id"
@@ -69,7 +69,7 @@ authenticators:
   bearer_token:
     enabled: true
     config:
-      check_session_url: https://kratos.tribecore.io/sessions/whoami
+      check_session_url: https://kratos-dev.dev.cordico.com/sessions/whoami
 
   noop:
     enabled: true
@@ -85,7 +85,7 @@ mutators:
   id_token:
     enabled: true
     config:
-      issuer_url: https://kratos-ss.tribecore.io/
+      issuer_url: https://kratos-ss-dev.dev.cordico.com/
       jwks_url: file:///etc/config/oathkeeper/jwks.json
       claims: |
         {

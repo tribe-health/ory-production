@@ -1,19 +1,19 @@
 version: v0.7.1-alpha.1
 
-dsn: postgres://kratos:kratos@postgres:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+dsn: postgres://kratos@cordico-production-psql-server-lexipol:kratos%40cordico-production-psql-server-lexipol.postgres.database.azure.com:5432/kratos
 
 serve:
   public:
-    base_url: https://kratos.tribecore.io/
+    base_url: https://kratos-dev.dev.cordico.com/
     cors:
       enabled: true
   admin:
-    base_url: https://kratos-admin.tribecore.io/
+    base_url: https://kratos-admin-dev.dev.cordico.com/
 
 selfservice:
-  default_browser_return_url: https://kratos-ss.tribecore.io/
+  default_browser_return_url: https://kratos-ss-dev.dev.cordico.com/
   whitelisted_return_urls:
-    - https://kratos-ss.tribecore.io
+    - https://kratos-ss-dev.dev.cordico.com
 
   methods:
     password:
@@ -22,33 +22,33 @@ selfservice:
 
   flows:
     error:
-      ui_url: https://kratos-ss.tribecore.io/error
+      ui_url: https://kratos-ss-dev.dev.cordico.com/error
 
     settings:
-      ui_url: https://kratos-ss.tribecore.io/settings
+      ui_url: https://kratos-ss-dev.dev.cordico.com/settings
       privileged_session_max_age: 15m
 
     recovery:
       enabled: true
-      ui_url: https://kratos-ss.tribecore.io/recovery
+      ui_url: https://kratos-ss-dev.dev.cordico.com/recovery
 
     verification:
       enabled: true
-      ui_url: https://kratos-ss.tribecore.io/verify
+      ui_url: https://kratos-ss-dev.dev.cordico.com/verify
       after:
-        default_browser_return_url: https://kratos-ss.tribecore.io/
+        default_browser_return_url: https://kratos-ss-dev.dev.cordico.com/
 
     logout:
       after:
-        default_browser_return_url: https://kratos-ss.tribecore.io/auth/login
+        default_browser_return_url: https://kratos-ss-dev.dev.cordico.com/auth/login
 
     login:
-      ui_url: https://kratos-ss.tribecore.io/auth/login
+      ui_url: https://kratos-ss-dev.dev.cordico.com/auth/login
       lifespan: 10m
 
     registration:
       lifespan: 10m
-      ui_url: https://kratos-ss.tribecore.io/auth/registration
+      ui_url: https://kratos-ss-dev.dev.cordico.com/auth/registration
       after:
         password:
           hooks:

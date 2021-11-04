@@ -2,66 +2,18 @@ version: '3.7'
 
 services:
 
-  hydra-migrate:
-    image: tribehealth/hydra:vNext
-    ports:
-      - "4444:4444" # Public port
-      - "4445:4445" # Admin port
-      - "5555:5555" # Port for hydra token user
-    depends_on:
-      - postgres-hydra
-      - jaeger
-    command:
-      migrate -c /etc/config/hydra/hydra.yml sql -e --yes
-    volumes:
-      -
-        type: bind
-        source: ./cordico
-        target: /etc/config/hydra
-    networks:
-      - cordico-hydra
-    environment:
-      - SECRETS_SYSTEM=iTOotd9jCA7KiwFApRp4y5fdOHLSGN4j
-      - DSN=postgres://hydra:hydra@postgres-hydra:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
-
-  hydra:
-    image: tribehealth/hydra:vNext
-    depends_on:
-      - hydra-migrate
-      - jaeger
-    volumes:
-      -
-        type: bind
-        source: ./cordico
-        target: /etc/config/hydra
-    command: serve all --config /etc/config/hydra/hydra.yml
-    networks:
-      - cordico-hydra
-    environment:
-      - SECRETS_SYSTEM=iTOotd9jCA7KiwFApRp4y5fdOHLSGN4j
-      - TRACING_PROVIDER=jaeger
-      - TRACING_PROVIDERS_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
-      - TRACING_PROVIDERS_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
-      - TRACING_PROVIDERS_JAEGER_SAMPLING_TYPE=const
-      - TRACING_PROVIDERS_JAEGER_SAMPLING_VALUE=1
-      - STRATEGIES_ACCESS_TOKEN=jwt
-      - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=public
-      - DSN=postgres://hydra:hydra@postgres-hydra:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
-
   kratos-migrate:
     image: tribehealth/kratos:vNext
     environment:
-      - DSN=postgres://hydra:hydra@postgres-hydra:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
-    command: migrate sql postgres://hydra:hydra@postgres-hydra:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4 --config /etc/config/kratos.yml --yes
-    depends_on:
-      - postgres-hydra
+      - DSN=postgres://kratos%40cordico-production-psql-server-lexipol:kratos@cordico-production-psql-server-lexipol.postgres.database.azure.com:5432/kratos
+    command: migrate sql postgres://kratos%40cordico-production-psql-server-lexipol:kratos@cordico-production-psql-server-lexipol.postgres.database.azure.com:5432/kratos --config /etc/config/kratos.yml --yes
     volumes:
       -
         type: bind
         source: ./kratos
         target: /etc/config
     networks:
-      - cordico-hydra
+      - cordico-dev
 
   kratos:
     image: tribehealth/kratos:vNext
@@ -78,22 +30,22 @@ services:
         target: /etc/config
     command: serve -c /etc/config/kratos.yml
     networks:
-      - cordico-hydra
+      - cordico-dev
     environment:
-      - SERVE_PUBLIC_BASE_URL=https://kratos-ss.tribecore.io/.ory/kratos/public/
+      - SERVE_PUBLIC_BASE_URL=https://kratos-ss-dev.dev.cordico.com/.ory/kratos/public/
       - TRACING_PROVIDER=jaeger
       - TRACING_PROVIDER_JAEGER_SAMPLING_SERVER_URL=http://jaeger:5778/sampling
       - TRACING_PROVIDER_JAEGER_LOCAL_AGENT_ADDRESS=jaeger:6831
       - TRACING_PROVIDER_JAEGER_SAMPLING_TYPE=const
       - TRACING_PROVIDER_JAEGER_SAMPLING_VALUE=1
-      - DSN=postgres://hydra:hydra@postgres-hydra:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - DSN=postgres://kratos%40cordico-production-psql-server-lexipol:kratos@cordico-production-psql-server-lexipol.postgres.database.azure.com:5432/kratos
 
   oathkeeper:
     image: oryd/oathkeeper:v0.38.12-beta.1
     depends_on:
       - jaeger
     networks:
-      - cordico-hydra
+      - cordico-dev
     ports:
       - "4455:4455"
       - "4456:4456"
@@ -118,56 +70,16 @@ services:
       - oathkeeper
     environment:
       - PORT=6666
-      - KRATOS_PUBLIC_URL=https://kratos-ss.tribecore.io/.ory/kratos/public
+      - KRATOS_PUBLIC_URL=https://kratos-ss-dev.dev.cordico.com/.ory/kratos/public
       - KRATOS_ADMIN_URL=http://kratos:4434/
-      - KRATOS_BROWSER_URL=https://kratos-ss.tribecore.io/.ory/kratos/public
+      - KRATOS_BROWSER_URL=https://kratos-ss-dev.dev.cordico.com/.ory/kratos/public
       - JWKS_URL=http://oathkeeper:4456/.well-known/jwks.json
       - SECURITY_MODE=jwt
     ports:
       - "6666:6666"
     networks:
-      - cordico-hydra
+      - cordico-dev
     restart: on-failure
-
-  consent:
-    environment:
-      - HYDRA_ADMIN_URL=http://hydra:4445
-    image: tribehealth/hydra-login-consent-node:v1.10.6
-    depends_on:
-      - hydra
-    ports:
-      - "3300:3300"
-    restart: unless-stopped
-    networks:
-      - cordico-hydra
-
-  postgres-hydra:
-    image: postgres:13
-    restart: always
-    command: postgres -c 'max_connections=1000'
-    volumes:
-      - ./data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: "hydra"
-      POSTGRES_USER: "hydra"
-    ports:
-      - "5478:5432"
-    networks:
-      - cordico-hydra
-
-  postgres:
-    image: postgres:12
-    restart: always
-    ports:
-    - "5445:5433"
-    volumes:
-    - ./db_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: postgrespassword
-    networks:
-      - cordico-hydra
-    command:
-      -p 5433
 
   prisma:
     image: tribehealth/prisma-query-engine:v0.0.3
@@ -175,37 +87,10 @@ services:
       PRISMA_DML_PATH: "/usr/src/app/prisma/schema.prisma"
     volumes:
       - ./prisma/schema.prisma:/usr/src/app/prisma/schema.prisma
-    depends_on:
-      - postgres
     ports:
       - "4466:4466"
     networks:
-      - cordico-hydra
-
-  graphql-engine:
-    image: hasura/graphql-engine:v2.0.9
-    ports:
-    - "8089:8999"
-    depends_on:
-    - "postgres"
-    restart: always
-    environment:
-      ## postgres database to store Hasura metadata
-      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5433/postgres
-      ## this env var can be used to add the above postgres database to Hasura as a data source. this can be removed/updated based on your needs
-      PG_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5433/postgres
-      ## enable the console served by server
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
-      HASURA_GRAPHQL_ENABLE_REMOTE_SCHEMA_PERMISSIONS: "true"
-      ## enable debugging mode. It is recommended to disable this in production
-      HASURA_GRAPHQL_DEV_MODE: "true"
-      HASURA_GRAPHQL_SERVER_PORT: 8999
-      HASURA_GRAPHQL_EXPERIMENTAL_FEATURES: "inherited_roles"
-      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      ## uncomment next line to set an admin secret
-      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
-    networks:
-      - cordico-hydra
+      - cordico-dev
 
   user-server:
     image: tribehealth/cordico-user-server:v0.0.41
@@ -226,14 +111,14 @@ services:
       KRATOS_URL: http://kratos:4433
       HASURA_URL: http://graphql-engine/v1/graphql
     networks:
-      - cordico-hydra
+      - cordico-dev
 
   redis:
     image: redis:latest
     ports:
       - 6377:6379
     networks:
-      - cordico-hydra
+      - cordico-dev
 
   ipfs:
     image: ipfs/go-ipfs
@@ -244,7 +129,7 @@ services:
     volumes:
       - ./ipfs:/data/ipfs
     networks:
-      - cordico-hydra
+      - cordico-dev
 
   jaeger:
     image: jaegertracing/all-in-one:1.25
@@ -256,10 +141,10 @@ services:
     volumes:
       - ./badger:/badger
     networks:
-      - cordico-hydra
+      - cordico-dev
     ports:
       - "9091:16686"
 
 networks:
-  cordico-hydra:
+  cordico-dev:
     external: true 

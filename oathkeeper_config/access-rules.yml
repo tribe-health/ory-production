@@ -5,7 +5,7 @@
     url: "http://kratos:4433"
     strip_path: /.ory/kratos/public
   match:
-    url: "http://kratos-ss.tribecore.io/.ory/kratos/public/<**>"
+    url: "http://kratos-ss-dev.dev.cordico.com/.ory/kratos/public/<**>"
     methods:
       - GET
       - POST
@@ -26,7 +26,7 @@
     preserve_host: true
     url: "http://kratos-selfservice-ui-node:6666"
   match:
-    url: "http://kratos-ss.tribecore.io/<{error,recovery,verify,auth/*,**.css,**.js}{/,}>"
+    url: "http://kratos-ss-dev.dev.cordico.com/<{error,recovery,verify,auth/*,**.css,**.js}{/,}>"
     methods:
       - GET
   authenticators:
@@ -44,7 +44,7 @@
     preserve_host: true
     url: "http://kratos-selfservice-ui-node:6666"
   match:
-    url: "http://kratos-ss.tribecore.io/<{,debug,dashboard,settings}>"
+    url: "http://kratos-ss-dev.dev.cordico.com/<{,debug,dashboard,settings}>"
     methods:
       - GET
   authenticators:
@@ -57,7 +57,7 @@
   errors:
     - handler: redirect
       config:
-        to: https://kratos-ss.tribecore.io/auth/login
+        to: https://kratos-ss-dev.dev.cordico.com/auth/login
 
 -
   id: "ory:metadata-cordico-dev:anonymous"
@@ -65,7 +65,7 @@
     preserve_host: true
     url: "http://graphql-engine:8999"
   match:
-    url: "http://metadata.dev.cordico.com/<**>"
+    url: "http://metadata-dev.dev.cordico.com/<**>"
     methods:
       - GET
       - POST
