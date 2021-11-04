@@ -170,7 +170,7 @@ services:
       -p 5433
 
   prisma:
-    image: tribehealth/prisma-query-engine:v0.0.2
+    image: tribehealth/prisma-query-engine:v0.0.3
     environment:
       PRISMA_DML_PATH: "/usr/src/app/prisma/schema.prisma"
     volumes:
@@ -208,7 +208,7 @@ services:
       - cordico-hydra
 
   user-server:
-    image: tribehealth/cordico-user-server:v0.0.40
+    image: tribehealth/cordico-user-server:v0.0.41
     ports:
      - "8460:8457"
     depends_on:
